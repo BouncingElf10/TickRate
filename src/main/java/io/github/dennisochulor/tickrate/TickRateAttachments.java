@@ -1,8 +1,10 @@
 package io.github.dennisochulor.tickrate;
 
+import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.dynamic.Codecs;
 
@@ -16,6 +18,12 @@ public class TickRateAttachments {
                     builder.persistent(TickState.CODEC)
                             .syncWith(TickState.PACKET_CODEC, AttachmentSyncPredicate.all())
                             .copyOnDeath()
+    );
+
+    public static final AttachmentType<Boolean> PLAYER_FROZEN = AttachmentRegistry.create(Identifier.of(TickRate.MOD_ID, "player_frozen"),
+            builder ->
+                    builder.persistent(Codec.BOOL)
+                            .syncWith(PacketCodecs.BOOL, AttachmentSyncPredicate.all())
     );
 
     public static final AttachmentType<TickState> TICK_STATE_SERVER = AttachmentRegistry.create(Identifier.of(TickRate.MOD_ID, "tick_state_server"),

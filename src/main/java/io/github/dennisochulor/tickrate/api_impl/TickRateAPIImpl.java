@@ -1,10 +1,12 @@
 package io.github.dennisochulor.tickrate.api_impl;
 
+import io.github.dennisochulor.tickrate.TickRateAttachments;
 import io.github.dennisochulor.tickrate.api.TickRateAPI;
 import io.github.dennisochulor.tickrate.api.TickRateEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerTickManager;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ChunkLevelType;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
@@ -116,7 +118,20 @@ public final class TickRateAPIImpl implements TickRateAPI {
         }
     }
 
+    @Override
+    public void freezePlayer(ServerPlayerEntity player, boolean freeze) {
+        if(player.isRemoved()) throw new IllegalArgumentException("Player must not be removed!");
+        if(!tickManager.isFrozen()) throw new IllegalStateException("Server must be frozen to freeze a player!");
+        player.setAttached(TickRateAttachments.PLAYER_FROZEN, freeze);
+        // clear the ticked cache entry so the change takes effect this tick
+        tickManager.tickRate$ticked(); // or expose a targeted cache-clear if you prefer
+    }
 
+    @Override
+    public boolean isPlayerFrozen(ServerPlayerEntity player) {
+        if(!tickManager.isFrozen()) return false;
+        return player.getAttachedOrElse(TickRateAttachments.PLAYER_FROZEN, false);
+    }
 
     @Override
     public float queryEntity(Entity entity) {

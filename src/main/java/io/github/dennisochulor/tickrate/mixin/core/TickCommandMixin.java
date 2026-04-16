@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.github.dennisochulor.tickrate.api.TickRateAPI;
 import io.github.dennisochulor.tickrate.api.TickRateEvents;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;
 import net.minecraft.command.CommandSource;
@@ -19,6 +20,7 @@ import net.minecraft.server.ServerTickManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.command.TickCommand;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ChunkLevelType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
@@ -112,6 +114,45 @@ public class TickCommandMixin {
                                                 .executes(context -> executeSprint(context.getSource(), entityCheck(EntityArgumentType.getEntities(context, "entities"), context.getSource()), IntegerArgumentType.getInteger(context, "time"))))
                                 )
                         )
+                )
+                .then(
+                        CommandManager.literal("player")
+                                .then(CommandManager.argument("players", EntityArgumentType.players())
+                                        .then(CommandManager.literal("freeze")
+                                                .executes(context -> {
+                                                    try {
+                                                        Collection<ServerPlayerEntity> players =
+                                                                EntityArgumentType.getPlayers(context, "players");
+
+                                                        TickRateAPI api = TickRateAPI.getInstance();
+
+                                                        for (ServerPlayerEntity player : players) {
+                                                            api.freezePlayer(player, true);
+                                                        }
+
+                                                        return players.size();
+                                                    } catch (Exception e) {
+                                                        e.printStackTrace();
+                                                        throw e;
+                                                    }
+
+                                                })
+                                        )
+                                        .then(CommandManager.literal("unfreeze")
+                                                .executes(context -> {
+                                                    Collection<ServerPlayerEntity> players =
+                                                            EntityArgumentType.getPlayers(context, "players");
+
+                                                    TickRateAPI api = TickRateAPI.getInstance();
+
+                                                    for (ServerPlayerEntity player : players) {
+                                                        api.freezePlayer(player, false);
+                                                    }
+
+                                                    return players.size();
+                                                })
+                                        )
+                                )
                 )
                 .then(
                         CommandManager.literal("chunk")
