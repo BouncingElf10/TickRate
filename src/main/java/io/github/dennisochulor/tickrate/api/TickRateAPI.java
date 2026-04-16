@@ -2,6 +2,7 @@ package io.github.dennisochulor.tickrate.api;
 
 import io.github.dennisochulor.tickrate.api_impl.TickRateAPIImpl;
 import net.minecraft.entity.Entity;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ChunkLevelType;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
@@ -61,7 +62,19 @@ public interface TickRateAPI {
      */
     void sprintServer(int sprintTicks);
 
+    /**
+     * Freezes or unfreezes specific players even while the server is frozen.
+     * This overrides the default behaviour where players are always exempt from server freeze.
+     *
+     * @param freeze true to freeze the player, false to unfreeze (restoring default exempt behaviour)
+     * @throws IllegalArgumentException if the player is removed, or if the server is not currently frozen.
+     */
+    void freezePlayer(ServerPlayerEntity player, boolean freeze);
 
+    /**
+     * Returns whether the specified player has been explicitly frozen via {@link #freezePlayer}.
+     */
+    boolean isPlayerFrozen(ServerPlayerEntity player);
 
     /**
      * Returns the tick rate of the entity. <p>

@@ -3,6 +3,7 @@ package io.github.dennisochulor.tickrate.mixin.core;
 import static io.github.dennisochulor.tickrate.TickRateAttachments.*;
 
 import com.llamalad7.mixinextras.sugar.Local;
+import io.github.dennisochulor.tickrate.TickRateAttachments;
 import io.github.dennisochulor.tickrate.injected_interface.TickRateTickManager;
 import io.github.dennisochulor.tickrate.TickState;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;
@@ -90,9 +91,16 @@ public abstract class ServerTickManagerMixin extends TickManager implements Tick
     }
 
     @Inject(method = "setFrozen", at = @At("TAIL"))
-    public void setFrozen(CallbackInfo ci, @Local(argsOnly = true) boolean frozen) { // for server (un)freeze
+    public void setFrozen(CallbackInfo ci, @Local(argsOnly = true) boolean frozen) {
         TickState newState = server.getOverworld().getAttached(TICK_STATE_SERVER).withFrozen(frozen);
         server.getWorlds().forEach(serverWorld -> serverWorld.setAttached(TICK_STATE_SERVER, newState));
+
+        // clear per-player freeze overrides when unfreezing
+        if(!frozen) {
+            server.getPlayerManager().getPlayerList().forEach(player ->
+                    player.removeAttached(TickRateAttachments.PLAYER_FROZEN)
+            );
+        }
     }
 
     /**
@@ -167,7 +175,14 @@ public abstract class ServerTickManagerMixin extends TickManager implements Tick
         // check server overrides
         if(tickRate$isServerSprint()) return true;
         if(isFrozen()) {
-            if(entity instanceof ServerPlayerEntity) return true;
+            if(entity instanceof ServerPlayerEntity) {
+                boolean playerFrozen = entity.getAttachedOrElse(PLAYER_FROZEN, false);
+                if(playerFrozen) {
+                    ticked.put(key, false);
+                    return false;
+                }
+                return true;
+            }
             return isStepping();
         }
 
