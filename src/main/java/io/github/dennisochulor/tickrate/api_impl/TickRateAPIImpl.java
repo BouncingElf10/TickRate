@@ -1,5 +1,6 @@
 package io.github.dennisochulor.tickrate.api_impl;
 
+import io.github.dennisochulor.tickrate.TickRate;
 import io.github.dennisochulor.tickrate.TickRateAttachments;
 import io.github.dennisochulor.tickrate.api.TickRateAPI;
 import io.github.dennisochulor.tickrate.api.TickRateEvents;
@@ -48,11 +49,18 @@ public final class TickRateAPIImpl implements TickRateAPI {
     }
 
 
-    private void entityCheck(Collection<? extends Entity> entities) throws IllegalArgumentException {
+    private Collection<Entity> entityCheck(Collection<? extends Entity> entities) throws IllegalArgumentException {
         Objects.requireNonNull(entities, "entities cannot be null!");
+        Collection<Entity> entitiesThatPass = new ArrayList<>();
         entities.forEach(entity -> {
-            if(entity.isRemoved()) throw new IllegalArgumentException("Entity must not be removed!");
+            // if(entity.isRemoved()) throw new IllegalArgumentException("Entity must not be removed!");
+            if (entity.isRemoved()) {
+                TickRate.LOGGER.error("Entity {} ({}) is removed! This is not allowed!", entity.getName().getString(), entity.getUuidAsString());
+            } else {
+                entitiesThatPass.add(entity);
+            }
         });
+        return entitiesThatPass;
     }
 
     private List<WorldChunk> chunkCheck(World world, Collection<ChunkPos> chunks) throws IllegalArgumentException {
@@ -135,14 +143,14 @@ public final class TickRateAPIImpl implements TickRateAPI {
 
     @Override
     public float queryEntity(Entity entity) {
-        entityCheck(List.of(entity));
-        return tickManager.tickRate$getEntityRate(entity);
+        Collection<Entity> entities = entityCheck(List.of(entity));
+        return tickManager.tickRate$getEntityRate(entities.iterator().next());
     }
 
     @Override
     public void rateEntity(Collection<? extends Entity> entities, float rate) {
         if(rate < 1.0f && rate != 0.0f) throw new IllegalArgumentException("rate must be >= 1 or exactly 0");
-        entityCheck(entities);
+        entities = entityCheck(entities);
 
         int roundRate = Math.round(rate);
         tickManager.tickRate$setRate(roundRate==0 ? -1 : roundRate, entities);
@@ -156,7 +164,7 @@ public final class TickRateAPIImpl implements TickRateAPI {
 
     @Override
     public void freezeEntity(Collection<? extends Entity> entities, boolean freeze) {
-        entityCheck(entities);
+        entities = entityCheck(entities);
 
         tickManager.tickRate$setFrozen(freeze, entities);
         entities.forEach(entity -> TickRateEvents.ENTITY_FREEZE.invoker().onEntityFreeze(entity, freeze));
@@ -170,7 +178,7 @@ public final class TickRateAPIImpl implements TickRateAPI {
     @Override
     public void stepEntity(Collection<? extends Entity> entities, int stepTicks) {
         if(stepTicks < 0) throw new IllegalArgumentException("stepTicks must be >= 0");
-        entityCheck(entities);
+        entities = entityCheck(entities);
 
         if(tickManager.tickRate$step(stepTicks, entities)) {
             if(stepTicks != 0) entities.forEach(entity -> TickRateEvents.ENTITY_STEP.invoker().onEntityStep(entity, stepTicks));
@@ -186,7 +194,7 @@ public final class TickRateAPIImpl implements TickRateAPI {
     @Override
     public void sprintEntity(Collection<? extends Entity> entities, int sprintTicks) {
         if(sprintTicks < 0) throw new IllegalArgumentException("sprintTicks must be >= 0");
-        entityCheck(entities);
+        entities = entityCheck(entities);
 
         if(tickManager.tickRate$sprint(sprintTicks, entities)) {
             if(sprintTicks != 0) entities.forEach(entity -> TickRateEvents.ENTITY_SPRINT.invoker().onEntitySprint(entity, sprintTicks));
