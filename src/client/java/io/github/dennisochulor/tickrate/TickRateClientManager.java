@@ -119,11 +119,14 @@ public class TickRateClientManager {
     }
 
     public static TickState getServerState() {
-        if(!serverHasMod()) {
+        TickState state = serverHasMod() ? MinecraftClient.getInstance().world.getAttached(TICK_STATE_SERVER) : null;
+        if(state == null) {
+            // either the server doesn't have the mod, or (e.g. right after switching into a freshly
+            // created custom dimension) TICK_STATE_SERVER hasn't synced to this world yet
             TickManager tickManager = MinecraftClient.getInstance().world.getTickManager();
             return new TickState((int) tickManager.getTickRate(),tickManager.isFrozen(),tickManager.isStepping(),false); // Client does not have any sprint info
         }
-        return MinecraftClient.getInstance().world.getAttached(TICK_STATE_SERVER);
+        return state;
     }
 
 }
