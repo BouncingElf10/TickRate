@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -50,6 +51,14 @@ public class TickRate implements ModInitializer {
 
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			server.getTickManager().tickRate$serverStarted();
+		});
+
+		// worlds created after the server has started (e.g. dynamically generated custom dimensions) never
+		// receive TICK_STATE_SERVER from tickRate$serverStarted, so the client NPEs when it tries to sync it.
+		ServerWorldEvents.LOAD.register((server, world) -> {
+			if(world.getAttached(TickRateAttachments.TICK_STATE_SERVER) == null) {
+				world.setAttached(TickRateAttachments.TICK_STATE_SERVER, server.getOverworld().getAttachedOrCreate(TickRateAttachments.TICK_STATE_SERVER));
+			}
 		});
 
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> TickRateAPIImpl.uninit());
