@@ -369,9 +369,8 @@ public abstract class ServerTickManagerMixin extends TickManager implements Tick
         return scheduledSprintTicks > 0L;
     }
 
-
-    // rate == -1 for reset
     public void tickRate$setRate(int rate, Collection<? extends AttachmentTarget> targets) {
+        if(targets.isEmpty()) return;
         targets.forEach(target -> target.modifyAttached(TICK_STATE, tickState -> {
             tickState = tickState==null ? TickState.DEFAULT : tickState;
             if(tickState.rate() != -1) updateTickersMap(tickState.rate(), -1);

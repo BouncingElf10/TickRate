@@ -25,8 +25,14 @@ public class WorldRendererMixin {
     @Unique private static final boolean isIrisLoaded = FabricLoader.getInstance().isModLoaded("iris");
 
     @Inject(method = "renderEntity", at = @At("HEAD"))
-    private void renderEntity(Entity entity, double cameraX, double cameraY, double cameraZ, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, CallbackInfo ci, @Local(argsOnly = true) LocalFloatRef tickDeltaRef) {
+    private void renderEntityHead(Entity entity, double cameraX, double cameraY, double cameraZ, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, CallbackInfo ci, @Local(argsOnly = true) LocalFloatRef tickDeltaRef) {
+        TickRateClientManager.setRenderingWorldEntity(true);
         tickDeltaRef.set(TickRateClientManager.getEntityTickDelta(entity).tickDelta()); // tickDelta
+    }
+
+    @Inject(method = "renderEntity", at = @At("RETURN"))
+    private void renderEntityReturn(Entity entity, double cameraX, double cameraY, double cameraZ, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, CallbackInfo ci) {
+        TickRateClientManager.setRenderingWorldEntity(false);
     }
 
     @ModifyVariable(method = "render", at = @At("HEAD"), argsOnly = true)
