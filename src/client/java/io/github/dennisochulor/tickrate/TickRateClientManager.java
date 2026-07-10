@@ -17,10 +17,10 @@ public class TickRateClientManager {
     private TickRateClientManager() {}
 
     private static boolean serverHasMod = false;
+    private static boolean renderingWorldEntity = false;
     private static final Map<Integer, TickDeltaInfo> entityCache = new HashMap<>();
     private static final Map<Long, TickDeltaInfo> chunkCache = new HashMap<>();
 
-    // called in RenderTickCounterDynamicMixin
     public static void clearCache() {
         entityCache.clear();
         chunkCache.clear();
@@ -32,6 +32,14 @@ public class TickRateClientManager {
 
     public static boolean serverHasMod() {
         return serverHasMod && MinecraftClient.getInstance().player != null;
+    }
+
+    public static void setRenderingWorldEntity(boolean rendering) {
+        renderingWorldEntity = rendering;
+    }
+
+    public static boolean isRenderingWorldEntity() {
+        return renderingWorldEntity;
     }
 
     public static float getMillisPerServerTick() {
@@ -57,10 +65,11 @@ public class TickRateClientManager {
         }
         else if(entity.hasVehicle()) info = getEntityTickDelta(entity.getRootVehicle());
         else {
-            // client's own player OR entities where client player is a passenger can go above 20TPS limit
             boolean cappedAt20TPS = !(entity==MinecraftClient.getInstance().player) && !entity.hasPassenger(MinecraftClient.getInstance().player);
             TickState state = getEntityState(entity); // this also handles passenger entities
-            if(state.sprinting()) // animate at max 20 TPS but for client player we don't know the TPS, so just say 100 :P
+            if(!state.sprinting() && !state.frozen() && !state.stepping() && state.rate() == serverState.rate())
+                info = TickDeltaInfo.ofServer(false);
+            else if(state.sprinting()) // animate at max 20 TPS but for client player we don't know the TPS, so just say 100 :P
                 info = cappedAt20TPS ? renderTickCounter.tickRate$getSpecificTickDeltaInfo(20) : renderTickCounter.tickRate$getClientPlayerTickDeltaInfo(100);
             else if(state.frozen() && !state.stepping()) info = TickDeltaInfo.NO_ANIMATE;
             else if(!cappedAt20TPS) info = renderTickCounter.tickRate$getClientPlayerTickDeltaInfo(state.rate());
