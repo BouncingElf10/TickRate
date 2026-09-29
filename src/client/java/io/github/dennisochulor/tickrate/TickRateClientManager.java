@@ -55,13 +55,9 @@ public class TickRateClientManager {
 
         if(!serverHasMod()) info = TickDeltaInfo.ofServer(false);
         else if(MinecraftClient.getInstance().isPaused()) info = TickDeltaInfo.NO_ANIMATE;
-        else if(entity instanceof PlayerEntity player && serverState.frozen()) {
-            Boolean frozen = player.getAttached(TickRateAttachments.PLAYER_FROZEN);
-            if (Boolean.TRUE.equals(frozen)) {
-                info = TickDeltaInfo.NO_ANIMATE;
-            } else {
-                info = TickDeltaInfo.ofServer(true);
-            }
+        else if(serverState.frozen() && (entity instanceof PlayerEntity || entity.hasAttached(TickRateAttachments.PLAYER_FROZEN))) {
+            boolean frozen = entity.getAttachedOrElse(TickRateAttachments.PLAYER_FROZEN, !(entity instanceof PlayerEntity));
+            info = frozen ? TickDeltaInfo.NO_ANIMATE : TickDeltaInfo.ofServer(true);
         }
         else if(entity.hasVehicle()) info = getEntityTickDelta(entity.getRootVehicle());
         else {

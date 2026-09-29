@@ -1,9 +1,13 @@
 package io.github.dennisochulor.tickrate.mixin.client.tick;
 
+import io.github.dennisochulor.tickrate.TickRateAttachments;
 import io.github.dennisochulor.tickrate.TickRateClientManager;
 import net.minecraft.block.Block;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.entity.Entity;
+import net.minecraft.world.tick.TickManager;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.random.Random;
@@ -27,6 +31,11 @@ public class ClientWorldMixin {
             int chance = (int) (chunkRate / playerChunkRate * 100);
             if(chance < random.nextBetween(1,100)) ci.cancel();
         }
+    }
+
+    @Redirect(method = "method_32124", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/tick/TickManager;shouldSkipTick(Lnet/minecraft/entity/Entity;)Z"))
+    private boolean tickEntities$shouldSkipTick(TickManager tickManager, Entity entity) {
+        return tickManager.shouldSkipTick(entity) && !Boolean.FALSE.equals(entity.getAttached(TickRateAttachments.PLAYER_FROZEN));
     }
 
 }

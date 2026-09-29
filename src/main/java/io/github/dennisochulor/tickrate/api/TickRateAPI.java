@@ -63,13 +63,16 @@ public interface TickRateAPI {
     void sprintServer(int sprintTicks);
 
     /**
-     * Freezes or unfreezes specific players even while the server is frozen.
-     * This overrides the default behaviour where players are always exempt from server freeze.
+     * Overrides whether an entity is frozen while the server is frozen.
+     * By default players are exempt from server freeze and all other entities are frozen. <p>
+     * <code>false</code> lets any entity (not just players) keep ticking during the server freeze.
+     * Overrides are cleared when the server unfreezes.
      *
-     * @param freeze true to freeze the player, false to unfreeze (restoring default exempt behaviour)
-     * @throws IllegalArgumentException if the player is removed, or if the server is not currently frozen.
+     * @param freeze true to freeze the entity, false to let it tick during the server freeze
+     * @throws IllegalArgumentException if the entity is removed.
+     * @throws IllegalStateException if the server is not currently frozen.
      */
-    void freezePlayer(ServerPlayerEntity player, boolean freeze);
+    void freezePlayer(Entity entity, boolean freeze);
 
     /**
      * Returns whether the specified player has been explicitly frozen via {@link #freezePlayer}.

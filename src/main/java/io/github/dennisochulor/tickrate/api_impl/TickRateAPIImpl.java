@@ -127,10 +127,10 @@ public final class TickRateAPIImpl implements TickRateAPI {
     }
 
     @Override
-    public void freezePlayer(ServerPlayerEntity player, boolean freeze) {
-        if(player.isRemoved()) throw new IllegalArgumentException("Player must not be removed!");
+    public void freezePlayer(Entity entity, boolean freeze) {
+        if(entity.isRemoved()) throw new IllegalArgumentException("Entity must not be removed!");
         if(!tickManager.isFrozen()) throw new IllegalStateException("Server must be frozen to freeze a player!");
-        player.setAttached(TickRateAttachments.PLAYER_FROZEN, freeze);
+        entity.setAttached(TickRateAttachments.PLAYER_FROZEN, freeze);
         // clear the ticked cache entry so the change takes effect this tick
         tickManager.tickRate$ticked(); // or expose a targeted cache-clear if you prefer
     }

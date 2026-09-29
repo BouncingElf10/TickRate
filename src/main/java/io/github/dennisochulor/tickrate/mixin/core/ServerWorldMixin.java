@@ -2,6 +2,7 @@ package io.github.dennisochulor.tickrate.mixin.core;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalBooleanRef;
+import io.github.dennisochulor.tickrate.TickRateAttachments;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.fluid.Fluid;
@@ -17,6 +18,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -66,6 +68,11 @@ public abstract class ServerWorldMixin {
     private void tick$entity(TickManager tickManager, Profiler profiler, Entity entity, CallbackInfo ci) {
         ServerTickManager tickManager1 = (ServerTickManager) tickManager;
         if(!tickManager1.tickRate$shouldTickEntity(entity)) ci.cancel();
+    }
+
+    @Redirect(method = "method_31420", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/tick/TickManager;shouldSkipTick(Lnet/minecraft/entity/Entity;)Z"))
+    private boolean tick$entityShouldSkipTick(TickManager tickManager, Entity entity) {
+        return tickManager.shouldSkipTick(entity) && !Boolean.FALSE.equals(entity.getAttached(TickRateAttachments.PLAYER_FROZEN));
     }
 
     // tickSpawners doesn't differentiate between chunks, so use server TPS i guess...

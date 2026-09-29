@@ -95,11 +95,10 @@ public abstract class ServerTickManagerMixin extends TickManager implements Tick
         TickState newState = server.getOverworld().getAttached(TICK_STATE_SERVER).withFrozen(frozen);
         server.getWorlds().forEach(serverWorld -> serverWorld.setAttached(TICK_STATE_SERVER, newState));
 
-        // clear per-player freeze overrides when unfreezing
         if(!frozen) {
-            server.getPlayerManager().getPlayerList().forEach(player ->
-                    player.removeAttached(TickRateAttachments.PLAYER_FROZEN)
-            );
+            server.getWorlds().forEach(world -> world.iterateEntities().forEach(entity -> {
+                if(entity.hasAttached(TickRateAttachments.PLAYER_FROZEN)) entity.removeAttached(TickRateAttachments.PLAYER_FROZEN);
+            }));
         }
     }
 
@@ -175,15 +174,10 @@ public abstract class ServerTickManagerMixin extends TickManager implements Tick
         // check server overrides
         if(tickRate$isServerSprint()) return true;
         if(isFrozen()) {
-            if(entity instanceof ServerPlayerEntity) {
-                boolean playerFrozen = entity.getAttachedOrElse(PLAYER_FROZEN, false);
-                if(playerFrozen) {
-                    ticked.put(key, false);
-                    return false;
-                }
-                return true;
-            }
-            return isStepping();
+            Boolean frozenOverride = entity.getAttached(PLAYER_FROZEN);
+            if(frozenOverride == null) return entity instanceof ServerPlayerEntity || isStepping();
+            ticked.put(key, !frozenOverride);
+            return !frozenOverride;
         }
 
 
